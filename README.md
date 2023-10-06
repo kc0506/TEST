@@ -36,3 +36,45 @@
     ```bash
         pip freeze > requirements.txt
     ```
+
+## Setup the repo
+
+1. Fork this repo
+
+2. Clone the repo you forked to your local computer
+
+    ```bash
+    git clone https://github.com/<your-forked-repo>/<your-forked-repo>.git
+    ```
+
+3. Add upstream
+
+    ```bash
+    git remote add upstream https://github.com/weiiiii0622/112-1_CSL.git
+    ```
+
+## If you want to get others new code……
+
+```bash
+// Pull from "source repo"
+git pull upstream master
+
+// Push to "local repo (your own)"
+git push origin
+```
+
+# If you want to update your code to others….
+
+```bash
+// Add every thing that you modified
+git add . 
+
+// Commit with "msg"
+git commit -m "msg"
+
+// Push back to "local repo (your own)"
+git push -u origin master
+
+// Send a pull request to "source repo"
+// Go to github page and press the pull request button
+```
