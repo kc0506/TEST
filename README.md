@@ -7,34 +7,34 @@
 1. (OPTIONAL) Install Virtual Environment
 
     ```bash
-        pip install virtualenv 
+    pip install virtualenv 
     ```
 
 2. Create virtual environment named "CSL"
 
     ```bash
-        virtualenv CSL
+    virtualenv CSL
     ```
 
 3. Enter / Leave virtual environment
 
     ```bash
-        # Enter
-        source CSL/bin/activate
-        # Leave
-        deactivate
+    # Enter VE
+    source CSL/bin/activate
+    # Leave VE
+    deactivate
     ```
 
 4. Install packages in "./requirements.txt"
 
     ```bash
-        pip install -r requirements.txt
+    pip install -r requirements.txt
     ```
 
 5. If new packages are added, update the requirements.txt
 
     ```bash
-        pip freeze > requirements.txt
+    pip freeze > requirements.txt
     ```
 
 ## Setup the repo
@@ -53,28 +53,40 @@
     git remote add upstream https://github.com/weiiiii0622/112-1_CSL.git
     ```
 
-## If you want to get others new code……
+## If you want to get others new code…
 
-```bash
-// Pull from "source repo"
-git pull upstream master
+1. Pull from "source repo"
 
-// Push to "local repo (your own)"
-git push origin
-```
+    ```bash
+    git pull upstream master
+    ```
 
-# If you want to update your code to others….
+2. Push to "local repo (your own)"
 
-```bash
-// Add every thing that you modified
-git add . 
+    ```bash
+    git push origin
+    ```
 
-// Commit with "msg"
-git commit -m "msg"
+## If you want to update your code to others…
 
-// Push back to "local repo (your own)"
-git push -u origin master
+1. Add every thing that you modified
 
-// Send a pull request to "source repo"
-// Go to github page and press the pull request button
-```
+    ```bash
+    git add .
+    ```
+
+2. Commit with "msg"
+
+    ```bash
+    git commit -m "msg"
+    ```
+
+3. Push back to "local repo (your own)"
+
+    ```bash
+    git push -u origin master
+    ```
+
+4. Send a pull request to "source repo"
+
+    // Go to github page and press the pull request button
