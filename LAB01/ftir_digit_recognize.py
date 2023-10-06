@@ -2,24 +2,38 @@ import cv2
 import numpy as np
 
 from helper import *
+from digit_recognization import *
 
 
 #######################  Constant  #######################
+# FILEPATH
+digit_img = "./img/digit.png"
+
 # List to store positions
 positions = []
 
-# Flag to control horizontal flip
-FLIP_HORIZONTAL = False
+# BOOLEAN
+FLIP_HORIZONTAL = True 		# Flag to control horizontal flip
 
-# Thresholds
+
+# THRESHOLD
 AREA_THRES  = 100
 R_THRES 	= 200
 G_THRES		= 0
 B_THRES		= 130
 
-##########################################################
+# DIGIT RECOGNIZATION
+DIGIT_FINISH = False		# Flag to determine a digit has finished written
 
-# main function
+
+#######################  Function  #######################
+
+
+
+
+
+#######################  Main      #######################
+
 if __name__ == "__main__":
 
 	cap = cv2.VideoCapture(0)
