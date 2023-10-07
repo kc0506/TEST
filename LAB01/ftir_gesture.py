@@ -25,7 +25,7 @@ FLIP_HORIZONTAL = True  # Flag to control horizontal flip
 
 # THRESHOLD
 AREA_THRES = 100
-R_THRES = 170
+R_THRES = 180
 G_THRES = 0
 B_THRES = 130
 

@@ -1,6 +1,8 @@
+from enum import Enum
 import threading
 from typing import Callable
 import cv2
+from matplotlib.cbook import print_cycles
 import numpy as np
 
 
@@ -12,7 +14,6 @@ def createSlider(R_THRES, G_THRES, B_THRES):
     # create a window
     cv2.namedWindow("Threshold Sliders")
     # create a slider
-    # @
     cv2.createTrackbar("R", "Threshold Sliders", R_THRES, 255, callback)
     cv2.createTrackbar("G", "Threshold Sliders", G_THRES, 255, callback)
     cv2.createTrackbar("B", "Threshold Sliders", B_THRES, 255, callback)
@@ -28,7 +29,7 @@ def set_interval(func: Callable, sec: float, is_running: Callable[[], bool]):
     return t
 
 
-class Colors:
+class Colors(Enum):
     """ANSI color codes"""
 
     BLACK = "\033[0;30m"
@@ -57,12 +58,28 @@ class Colors:
     END = "\033[0m"
 
 
+def printc(color: Colors, s: str):
+    print(f"{color.value}{s}{Colors.END.value}")
+
+
+
 #######################  Utility  #######################
-def put_digit(display, digit:int):
-	if(digit == None):
-		cv2.putText(display, f"Current Digit: None", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-	else:
-		cv2.putText(display, f"Current Digit: {digit}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+def put_digit(display, digit: int):
+    if digit == None:
+        cv2.putText(
+            display, f"Current Digit: None", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2
+        )
+    else:
+        cv2.putText(
+            display,
+            f"Current Digit: {digit}",
+            (20, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 255, 0),
+            2,
+        )
+
 
 # frame: your frame
 # path : your save location path

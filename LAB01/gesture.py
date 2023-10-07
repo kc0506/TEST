@@ -1,13 +1,13 @@
 import datetime
+from enum import Enum
 import threading
 from time import sleep
 from typing import Callable, Sequence
 import cv2
 
-
 from cv2.typing import MatLike
 
-from helper import Colors, set_interval
+from helper import Colors, printc, set_interval
 
 
 TICK = 0.01
@@ -19,6 +19,12 @@ NOTOUCH_DELAY = 30
 CLICK_PERIOD = 100
 MIN_RADIUS = 10
 CLICK_DELAY = 30
+
+
+class Direction(Enum):
+    LEFT = "left"
+    RIGHT = "right"
+    NONE = "none"
 
 
 class GestureHandler:
@@ -50,18 +56,13 @@ class GestureHandler:
     notouch_start_tick = -1
 
     print_longtap = False
+    direction: Direction = Direction.NONE
+    drag_offset: tuple[float, float] | None = None
 
     def handle_contours(self, contours: Sequence[MatLike]):
         contours = tuple(filter(lambda cnt: cv2.minEnclosingCircle(cnt)[1] >= MIN_RADIUS, contours))
+        contours = sorted(contours, key=lambda cnt: cv2.minEnclosingCircle(cnt)[1])
         flag = bool(contours)
-
-        # if contours:
-        #     cnt = contours[0]
-        #     (x, y), radius = cv2.minEnclosingCircle(cnt)
-        #     print(int(radius))
-        #     flag = radius >= MIN_RADIUS
-        #     if flag:
-        #         print("radius: ", radius)
 
         if flag:
             self.notouch_start_tick = -1
@@ -70,9 +71,27 @@ class GestureHandler:
                 self.touch_start_tick = self.tick
             delta = self.tick - self.touch_start_tick
 
-            if delta >= CLICK_PERIOD and not self.print_longtap:
-                print(f"{Colors.BLUE}[+] long tap{Colors.END}")
-                self.print_longtap = True
+            if delta >= CLICK_PERIOD:
+                if not self.print_longtap:
+                    printc(Colors.BLUE, "[+] long tap")
+                    self.print_longtap = True
+
+                (x, y), _ = cv2.minEnclosingCircle(contours[-1])
+                if self.drag_offset:
+                    x0, y0 = self.drag_offset
+
+                    if abs(x0 - x) > 20:
+                        # print(f"new: {(x, y)}")
+                        # print(f"delta: {x-x0}")
+                        new_direction = Direction.RIGHT if x0 < x else Direction.LEFT
+                        if new_direction != self.direction:
+                            print(f"[+] swipe {new_direction.value}")
+
+                        self.drag_offset = (x, y)
+                        self.direction = new_direction
+                else:
+                    self.drag_offset = (x, y)
+                    # print(f"offset: {(x, y)}")
 
         else:
             if self.notouch_start_tick == -1:
@@ -81,12 +100,13 @@ class GestureHandler:
             if delta < NOTOUCH_DELAY:
                 return
 
-            # print("notouch: ", delta)
             if self.touch_start_tick != -1:
                 if self.tick - self.touch_start_tick >= CLICK_PERIOD:
-                    print(f"{Colors.RED}[+] long tap end{Colors.END}")
+                    printc(Colors.RED, "[+] long tap end")
                 elif delta >= CLICK_DELAY:
-                    print(f"{Colors.GREEN}[+] tap{Colors.END}")
+                    printc(Colors.GREEN, "[+] tap")
 
+            self.direction = Direction.NONE
+            self.drag_offset = None
             self.print_longtap = False
             self.touch_start_tick = -1
