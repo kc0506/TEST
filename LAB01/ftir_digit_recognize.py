@@ -7,7 +7,7 @@ from digit_recognization import *
 
 #######################  Constant  #######################
 # FILEPATH
-digit_img = "./img/digit.png"
+DIGIT_IMG = "./img/digit.png"
 
 # List to store positions
 positions = []
@@ -24,7 +24,8 @@ B_THRES		= 130
 
 # DIGIT RECOGNIZATION
 DIGIT_FINISH = False		# Flag to determine a digit has finished written
-
+VANISH_COOLDOWN = 8        # If no contour has been detected within cooldown, input is finished
+digit = None
 
 #######################  Function  #######################
 
@@ -39,9 +40,13 @@ if __name__ == "__main__":
 	cap = cv2.VideoCapture(0)
 	createSlider(R_THRES, G_THRES, B_THRES)
 
+	cooldown = VANISH_COOLDOWN
+
 	while(True):
 		# Get one frame from the camera
 		ret, frame = cap.read()
+
+		#print(f"cooldown: {cooldown}, len(pos):{len(positions)}")
 
 		# Check if horizontal flip is enabled
 		if FLIP_HORIZONTAL:
@@ -68,12 +73,20 @@ if __name__ == "__main__":
 		cv2.drawContours(display, contours, -1, (0,0,255))
 
 		# Iterate through each contour, check the area and find the center
-
+		# Get Valid Contours
+		valid_contours = []
 		for cnt in contours:
-			# Calculate the area of the contour
 			area = cv2.contourArea(cnt)
 			if area > AREA_THRES:
-				# Find the centroid
+				valid_contours.append(cnt)
+
+		if len(valid_contours) == 0:		# No input
+			cooldown -= 1
+		else:
+			cooldown = VANISH_COOLDOWN
+			for cnt in valid_contours:
+				# Calculate the area of the contour
+					# Find the centroid
 				(x,y), radius = cv2.minEnclosingCircle(cnt)
 				center = (int(x), int(y))
 				radius = int(radius)
@@ -88,10 +101,22 @@ if __name__ == "__main__":
 		for i in range(1, len(positions)):
 			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 5)
 
+		# Show Recognization Result
+		put_digit(display, digit)
+
 		# Show the frame
 		cv2.imshow('frame', frame)
 		cv2.imshow("display", display)
-
+		# Input is ready
+		if cooldown <= 0:
+			if len(positions) != 0:
+				#DIGIT_FINISH = True						# Set Flag
+				crop_display = display[50:480, 0:640]
+				cv2.imwrite(DIGIT_IMG, crop_display)				# Screenshot current display
+				digit = recognize_img_to_digit(DIGIT_IMG)	# Get Result
+				positions = []								# Clear the position
+			cooldown = VANISH_COOLDOWN					# Reset CoolDown
+		
 		# Press h to toggle horizontal flip
 		# Press c to clear
 		# Press q to quit

@@ -13,6 +13,8 @@ from helper import Colors, set_interval
 TICK = 0.01
 TOUCH_DELAY_SEC = 0.1
 NOTOUCH_DELAY_SEC = 0.1
+TOUCH_DELAY = 30
+NOTOUCH_DELAY = 30
 
 CLICK_PERIOD = 200
 MIN_RADIUS = 5
@@ -52,7 +54,7 @@ class GestureHandler:
         if contours:
             cnt = contours[0]
             (x, y), radius = cv2.minEnclosingCircle(cnt)
-            flag = radius >= self.MIN_RADIUS
+            flag = radius >= MIN_RADIUS
             if flag:
                 print("radius: ", radius)
 
@@ -63,7 +65,7 @@ class GestureHandler:
             if self.touch_start_tick == -1:
                 self.touch_start_tick = self.tick
             delta = self.tick - self.touch_start_tick
-            if delta >= self.CLICK_PERIOD:
+            if delta >= CLICK_PERIOD:
                 print(f"{Colors.BLUE}[+] long tap{Colors.END}")
             print(self.tick, self.touch_start_tick)
 
@@ -71,14 +73,14 @@ class GestureHandler:
             if self.notouch_start_tick == -1:
                 self.notouch_start_tick = self.tick
             delta = self.tick - self.notouch_start_tick
-            if delta < self.NOTOUCH_DELAY:
+            if delta < NOTOUCH_DELAY:
                 return
 
             # print("notouch: ", delta)
             if self.touch_start_tick != -1:
-                if delta >= self.CLICK_PERIOD:
+                if delta >= CLICK_PERIOD:
                     print(f"{Colors.RED}[+] long tap end{Colors.END}")
-                elif delta >= self.CLICK_DELAY:
+                elif delta >= CLICK_DELAY:
                     print(f"{Colors.GREEN}[+] tap{Colors.END}")
 
             self.touch_start_tick = -1
