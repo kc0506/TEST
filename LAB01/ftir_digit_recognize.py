@@ -24,8 +24,9 @@ B_THRES		= 130
 
 # DIGIT RECOGNIZATION
 DIGIT_FINISH = False		# Flag to determine a digit has finished written
-VANISH_COOLDOWN = 8        # If no contour has been detected within cooldown, input is finished
-digit = None
+VANISH_COOLDOWN = 8         # If no contour has been detected within cooldown, input is finished
+digit = None				# Recognization Result
+CLF_MODEL = None 			# Trained Model
 
 #######################  Function  #######################
 
@@ -39,6 +40,7 @@ if __name__ == "__main__":
 
 	cap = cv2.VideoCapture(0)
 	createSlider(R_THRES, G_THRES, B_THRES)
+	CLF_MODEL = train_model()					# Get Model
 
 	cooldown = VANISH_COOLDOWN
 
@@ -99,7 +101,7 @@ if __name__ == "__main__":
 
 		# Draw the object's trajectory
 		for i in range(1, len(positions)):
-			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 5)
+			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 10)
 
 		# Show Recognization Result
 		put_digit(display, digit)
@@ -111,8 +113,8 @@ if __name__ == "__main__":
 		if cooldown <= 0:
 			if len(positions) != 0:
 				#DIGIT_FINISH = True						# Set Flag
-				screenshot(display, DIGIT_IMG, 1)			# Screenshot
-				digit = recognize_img_to_digit(DIGIT_IMG)	# Get Result
+				path_cropped = screenshot(display, DIGIT_IMG, 1)			# Screenshot
+				digit = recognize_img_to_digit(path_cropped, CLF_MODEL)	# Get Result
 				positions = []								# Clear the position
 			cooldown = VANISH_COOLDOWN					# Reset CoolDown
 		#

@@ -65,13 +65,15 @@ def train_model():
     return clf
 
 
-def recognize_img_to_digit(path:str):
+def recognize_img_to_digit(path:str, clf:svm.SVC):
     # Load an image
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-
+    resized_img = cv2.resize(img, (8, 8), interpolation=cv2.INTER_AREA)
+    data = resized_img.reshape((1, -1))
     print("START RECOGNIZING...")
-    digit = pytesseract.image_to_string(img, config='--oem 3 --psm 6')
-    digit = digit.replace('\n', '').replace('\f', '')
-    print(digit)
+    digit = clf.predict(data)
+    # digit = pytesseract.image_to_string(img, config='--oem 3 --psm 6')
+    # digit = digit.replace('\n', '').replace('\f', '')
+    print(f"Result: {digit[0]}")
     print("FINISH RECOGNIZING...")
-    return digit
+    return digit[0]

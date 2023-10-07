@@ -32,7 +32,8 @@ def put_digit(display, digit:int):
 # return the cropped screenshot
 def screenshot(frame, path:str, mode:int):
 	crop_frame = frame[50:480, 0:640]
-	cv2.imwrite(path, crop_frame)				# Screenshot current display
+	crop_frame = 255 - crop_frame
+	cv2.imwrite(path, crop_frame)					# Screenshot current display
 	img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
 	if(mode == 1): # Crop
 		ret, thresh = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
@@ -50,6 +51,8 @@ def screenshot(frame, path:str, mode:int):
 		e_x = int(min(480, center_x + r))
 		s_y = int(max(50, center_y - r))
 		e_y = int(min(640, center_y + r))
-		cropped_image = img[s_y:e_y, s_x:e_x]
+		#cropped_image = img[s_y:e_y, s_x:e_x]
+		cropped_image = img[y:y+h, x:x+w]
+
 		cv2.imwrite('./img/cropped_image.jpg', cropped_image)
-	return img
+	return './img/cropped_image.jpg'
