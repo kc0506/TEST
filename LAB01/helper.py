@@ -57,13 +57,19 @@ class Colors:
     END = "\033[0m"
 
 
+#######################  Utility  #######################
+def put_digit(display, digit:int):
+	if(digit == None):
+		cv2.putText(display, f"Current Digit: None", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+	else:
+		cv2.putText(display, f"Current Digit: {digit}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
 # frame: your frame
 # path : your save location path
 # mode : 0-> No crop, 1-> Crop
 # return the cropped screenshot
 def screenshot(frame, path:str, mode:int):
 	crop_frame = frame[50:480, 0:640]
-	crop_frame = 255 - crop_frame
 	cv2.imwrite(path, crop_frame)					# Screenshot current display
 	img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
 	if(mode == 1): # Crop
@@ -83,7 +89,8 @@ def screenshot(frame, path:str, mode:int):
 		s_y = int(max(50, center_y - r))
 		e_y = int(min(640, center_y + r))
 		#cropped_image = img[s_y:e_y, s_x:e_x]
-		cropped_image = img[y:y+h, x:x+w]
-
-		cv2.imwrite('./img/cropped_image.jpg', cropped_image)
-	return './img/cropped_image.jpg'
+		w = max(30, w)
+		cropped_image = img[y:y+h, x-30:x+w+30]
+		cropped_image = 255 - cropped_image
+		cv2.imwrite('./img/cropped_image.png', cropped_image)
+	return './img/cropped_image.png'

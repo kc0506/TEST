@@ -11,7 +11,7 @@ from helper import *
 
 #######################  Constant  #######################
 
-CAMERA = 1
+CAMERA = 0
 
 # FILEPATH
 digit_img = "./img/digit.png"

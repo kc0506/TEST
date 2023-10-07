@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
 		# Draw the object's trajectory
 		for i in range(1, len(positions)):
-			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 10)
+			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 40)
 
 		# Show Recognization Result
 		put_digit(display, digit)

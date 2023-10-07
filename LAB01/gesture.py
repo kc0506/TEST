@@ -6,7 +6,6 @@ import cv2
 
 
 from cv2.typing import MatLike
-from flask.scaffold import F
 
 from helper import Colors, set_interval
 
