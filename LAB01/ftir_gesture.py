@@ -5,7 +5,8 @@ import numpy as np
 from gesture import GestureHandler
 
 from helper import *
-from digit_recognization import *
+
+# from digit_recognization import *
 
 
 #######################  Constant  #######################
@@ -24,7 +25,7 @@ FLIP_HORIZONTAL = True  # Flag to control horizontal flip
 
 # THRESHOLD
 AREA_THRES = 100
-R_THRES = 200
+R_THRES = 170
 G_THRES = 0
 B_THRES = 130
 
@@ -65,8 +66,11 @@ if __name__ == "__main__":
         if FLIP_HORIZONTAL:
             frame = cv2.flip(frame, 1)
 
-        # Split RGB channels
-        b, g, r = cv2.split(frame)
+        try:
+            # Split RGB channels
+            b, g, r = cv2.split(frame)
+        except:
+            continue
 
         # Perform thresholding to each channel
         r_thres = cv2.getTrackbarPos("R", "Threshold Sliders")
@@ -86,6 +90,11 @@ if __name__ == "__main__":
         cv2.drawContours(display, contours, -1, (0, 0, 255))
 
         cur_contours = contours
+        # if contours:
+
+        # print(len(contours))
+        #     radius = cv2.minEnclosingCircle(contours[0])[1]
+        #     print(radius)
 
         # Iterate through each contour, check the area and find the center
 

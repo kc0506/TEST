@@ -6,6 +6,7 @@ import cv2
 
 
 from cv2.typing import MatLike
+from flask.scaffold import F
 
 from helper import Colors, set_interval
 
@@ -16,8 +17,8 @@ NOTOUCH_DELAY_SEC = 0.1
 TOUCH_DELAY = 30
 NOTOUCH_DELAY = 30
 
-CLICK_PERIOD = 200
-MIN_RADIUS = 5
+CLICK_PERIOD = 100
+MIN_RADIUS = 10
 CLICK_DELAY = 30
 
 
@@ -49,25 +50,30 @@ class GestureHandler:
     touch_start_tick = -1
     notouch_start_tick = -1
 
+    print_longtap = False
+
     def handle_contours(self, contours: Sequence[MatLike]):
-        flag = False
-        if contours:
-            cnt = contours[0]
-            (x, y), radius = cv2.minEnclosingCircle(cnt)
-            flag = radius >= MIN_RADIUS
-            if flag:
-                print("radius: ", radius)
+        contours = tuple(filter(lambda cnt: cv2.minEnclosingCircle(cnt)[1] >= MIN_RADIUS, contours))
+        flag = bool(contours)
+
+        # if contours:
+        #     cnt = contours[0]
+        #     (x, y), radius = cv2.minEnclosingCircle(cnt)
+        #     print(int(radius))
+        #     flag = radius >= MIN_RADIUS
+        #     if flag:
+        #         print("radius: ", radius)
 
         if flag:
-            print("touch")
             self.notouch_start_tick = -1
 
             if self.touch_start_tick == -1:
                 self.touch_start_tick = self.tick
             delta = self.tick - self.touch_start_tick
-            if delta >= CLICK_PERIOD:
+
+            if delta >= CLICK_PERIOD and not self.print_longtap:
                 print(f"{Colors.BLUE}[+] long tap{Colors.END}")
-            print(self.tick, self.touch_start_tick)
+                self.print_longtap = True
 
         else:
             if self.notouch_start_tick == -1:
@@ -78,9 +84,10 @@ class GestureHandler:
 
             # print("notouch: ", delta)
             if self.touch_start_tick != -1:
-                if delta >= CLICK_PERIOD:
+                if self.tick - self.touch_start_tick >= CLICK_PERIOD:
                     print(f"{Colors.RED}[+] long tap end{Colors.END}")
                 elif delta >= CLICK_DELAY:
                     print(f"{Colors.GREEN}[+] tap{Colors.END}")
 
+            self.print_longtap = False
             self.touch_start_tick = -1
