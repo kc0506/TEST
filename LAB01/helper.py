@@ -67,7 +67,7 @@ def put_digit(display, digit:int):
 # frame: your frame
 # path : your save location path
 # mode : 0-> No crop, 1-> Crop
-# return the cropped screenshot
+# return the path of the screenshot
 def screenshot(frame, path:str, mode:int):
 	crop_frame = frame[50:480, 0:640]
 	cv2.imwrite(path, crop_frame)					# Screenshot current display
@@ -93,4 +93,5 @@ def screenshot(frame, path:str, mode:int):
 		cropped_image = img[y:y+h, x-30:x+w+30]
 		cropped_image = 255 - cropped_image
 		cv2.imwrite('./img/cropped_image.png', cropped_image)
-	return './img/cropped_image.png'
+		return './img/cropped_image.png'
+	return path
