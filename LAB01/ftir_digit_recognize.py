@@ -111,15 +111,14 @@ if __name__ == "__main__":
 		if cooldown <= 0:
 			if len(positions) != 0:
 				#DIGIT_FINISH = True						# Set Flag
-				crop_display = display[50:480, 0:640]
-				cv2.imwrite(DIGIT_IMG, crop_display)				# Screenshot current display
+				screenshot(display, DIGIT_IMG, 1)			# Screenshot
 				digit = recognize_img_to_digit(DIGIT_IMG)	# Get Result
 				positions = []								# Clear the position
 			cooldown = VANISH_COOLDOWN					# Reset CoolDown
-		
-		# Press h to toggle horizontal flip
-		# Press c to clear
-		# Press q to quit
+		#
+		#* Press h to toggle horizontal flip
+		#* Press c to clear
+		#* Press q to quit
 		key = cv2.waitKey(1) & 0xFF
 		if key == ord('h'):
 			FLIP_HORIZONTAL = not FLIP_HORIZONTAL
