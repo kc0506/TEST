@@ -1,15 +1,17 @@
 from abc import ABC, abstractmethod
+from ast import Call
 import datetime
-from enum import Enum
 from math import inf
+from pickletools import read_unicodestring1
 import threading
 from time import sleep
 from typing import Callable, List, Protocol, Sequence
+import typing
 import cv2
 
 from cv2.typing import MatLike
-from numpy import logaddexp
-from yarg import latest_updated_packages
+from discord import NotFound
+import numpy as np
 
 from helper import Colors, printc
 
@@ -43,9 +45,13 @@ class Direction:
         return self.dir
 
 
-class ContoursHandler(Protocol):
+@typing.runtime_checkable
+class ContoursHandlerClass(Protocol):
     def handle(self, contours: Sequence[MatLike], tick: float):
         pass
+
+
+ContourHandler = Callable[[Sequence[MatLike], float], None]
 
 
 tick0 = datetime.datetime.now()
@@ -54,7 +60,7 @@ tick0 = datetime.datetime.now()
 class Processor:
     get_cur_contours: Callable[[], Sequence[MatLike] | None]
     running = True
-    handlers: list[ContoursHandler] = []
+    handlers: list[ContoursHandlerClass | ContourHandler] = []
 
     def __init__(self, get_cur_contours: Callable[[], Sequence[MatLike] | None]) -> None:
         self.get_cur_contours = get_cur_contours
@@ -77,14 +83,17 @@ class Processor:
                 )
 
                 for hanlder in self.handlers:
-                    hanlder.handle(contours, cur_time)
+                    if isinstance(hanlder, ContoursHandlerClass):
+                        hanlder.handle(contours, cur_time)
+                    else:
+                        hanlder(contours, cur_time)
 
                 sleep(FRAME)
 
         t = threading.Thread(target=loop_target)
         t.start()
 
-    def register_handler(self, handler: ContoursHandler):
+    def register_handler(self, handler: ContoursHandlerClass | ContourHandler):
         self.handlers.append(handler)
 
 
@@ -118,7 +127,7 @@ class UnitouchHandler(ABC):
             else:
                 self.last_touch_st = tick
 
-            # ? 對 touch 比較寬容
+            # ? More tolerate for touch - cancel potential notouch on any touch
             self.last_notouch_st = -1
         else:
             # no touch
@@ -226,3 +235,30 @@ class GestureHandler(UnitouchHandler):
         self.drag_offset = None
         self.cur_touch_st = -1
         self.last_touch_end = tick
+
+
+class GUIHandler(UnitouchHandler):
+    ...
+
+
+class TrajectoryHandler(UnitouchHandler):
+    frame: MatLike
+
+    def __init__(self, shape: tuple[int, int]) -> None:
+        self.frame = np.zeros(shape)
+
+    def touch(
+        self,
+        x: float,
+        y: float,
+        tick: float,
+    ):
+        # return super().touch(x, y, tick)
+        return
+
+    def notouch(self, tick: float):
+        return
+
+
+# Processor(lambda: None).register_handler(TrajectoryHandler())
+# Processor(lambda: None).register_handler(GestureHandler())
