@@ -1,6 +1,5 @@
 import datetime
 from enum import Enum
-from tarfile import DIRTYPE
 import threading
 from time import sleep
 from typing import Callable, Sequence
@@ -8,7 +7,7 @@ import cv2
 
 from cv2.typing import MatLike
 
-from helper import Colors, set_interval
+from helper import Colors, printc, set_interval
 
 
 TICK = 0.01
@@ -74,7 +73,7 @@ class GestureHandler:
 
             if delta >= CLICK_PERIOD:
                 if not self.print_longtap:
-                    print(f"{Colors.BLUE}[+] long tap{Colors.END}")
+                    printc(Colors.BLUE, "[+] long tap")
                     self.print_longtap = True
 
                 (x, y), _ = cv2.minEnclosingCircle(contours[-1])
@@ -103,9 +102,9 @@ class GestureHandler:
 
             if self.touch_start_tick != -1:
                 if self.tick - self.touch_start_tick >= CLICK_PERIOD:
-                    print(f"{Colors.RED}[+] long tap end{Colors.END}")
+                    printc(Colors.RED, "[+] long tap end")
                 elif delta >= CLICK_DELAY:
-                    print(f"{Colors.GREEN}[+] tap{Colors.END}")
+                    printc(Colors.GREEN, "[+] tap")
 
             self.direction = Direction.NONE
             self.drag_offset = None
