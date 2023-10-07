@@ -2,7 +2,7 @@ import signal
 import sys
 import cv2
 import numpy as np
-from gesture import GestureHandler
+from gesture import GestureHandler, Processor
 
 from helper import *
 
@@ -41,8 +41,8 @@ def get_cur_contours():
 def signal_handler(signum, frame):
     print("teminating...")
     if signum == signal.SIGINT.value:
-        if gesture_handler:
-            gesture_handler.kill_loop()
+        if processor:
+            processor.kill_loop()
         sys.exit(1)
 
 
@@ -52,8 +52,11 @@ signal.signal(signal.SIGINT, signal_handler)
 #######################  Main      #######################
 
 if __name__ == "__main__":
-    gesture_handler = GestureHandler(get_cur_contours)
-    gesture_handler.main_loop()
+    processor = Processor(get_cur_contours)
+
+    processor.register_handler(GestureHandler())
+
+    processor.main_loop()
 
     cap = cv2.VideoCapture(CAMERA)
     createSlider(R_THRES, G_THRES, B_THRES)
@@ -90,13 +93,6 @@ if __name__ == "__main__":
         cv2.drawContours(display, contours, -1, (0, 0, 255))
 
         cur_contours = contours
-        # if contours:
-
-        # print(len(contours))
-        #     radius = cv2.minEnclosingCircle(contours[0])[1]
-        #     print(radius)
-
-        # Iterate through each contour, check the area and find the center
 
         for cnt in contours:
             # Calculate the area of the contour
