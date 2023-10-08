@@ -62,9 +62,8 @@ def printc(color: Colors, s: str):
     print(f"{color.value}{s}{Colors.END.value}")
 
 
-
 #######################  Utility  #######################
-def put_digit(display, digit: int):
+def put_digit(display, digit: int | None):
     if digit == None:
         cv2.putText(
             display, f"Current Digit: None", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2
@@ -80,35 +79,41 @@ def put_digit(display, digit: int):
             2,
         )
 
+def get_euclidean_distance(pos1: tuple, pos2: tuple):
+    return (abs(pos1[0]-pos2[0])**2 + abs(pos1[1]-pos2[1])**2)**0.5
+
 
 # frame: your frame
 # path : your save location path
 # mode : 0-> No crop, 1-> Crop
 # return the path of the screenshot
-def screenshot(frame, path:str, mode:int):
-	crop_frame = frame[50:480, 0:640]
-	cv2.imwrite(path, crop_frame)					# Screenshot current display
-	img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-	if(mode == 1): # Crop
-		ret, thresh = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
-		# Find contours in the binary mask
-		contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-		# Iterate through the contours and find the largest one (assuming the white line is the largest contour)
-		largest_contour = max(contours, key=cv2.contourArea)
+def screenshot(frame, path: str, mode: int):
+    crop_frame = frame[50:480, 0:640]
+    cv2.imwrite(path, crop_frame)  # Screenshot current display
+    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    if mode == 1:  # Crop
+        ret, thresh = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
+        # Find contours in the binary mask
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Iterate through the contours and find the largest one (assuming the white line is the largest contour)
+        if len(contours) == 0:
+            return ""
 
-		# Get the bounding box of the largest contour
-		x, y, w, h = cv2.boundingRect(largest_contour)
-		center_x = (x + x + w) / 2
-		center_y = (y + y + h) / 2
-		r = max(w/2, h/2) + 30
-		s_x = int(max(0, center_x - r))
-		e_x = int(min(480, center_x + r))
-		s_y = int(max(50, center_y - r))
-		e_y = int(min(640, center_y + r))
-		#cropped_image = img[s_y:e_y, s_x:e_x]
-		w = max(30, w)
-		cropped_image = img[y:y+h, x-30:x+w+30]
-		cropped_image = 255 - cropped_image
-		cv2.imwrite('./img/cropped_image.png', cropped_image)
-		return './img/cropped_image.png'
-	return path
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Get the bounding box of the largest contour
+        x, y, w, h = cv2.boundingRect(largest_contour)
+        center_x = (x + x + w) / 2
+        center_y = (y + y + h) / 2
+        r = max(w / 2, h / 2) + 30
+        s_x = int(max(0, center_x - r))
+        e_x = int(min(480, center_x + r))
+        s_y = int(max(50, center_y - r))
+        e_y = int(min(640, center_y + r))
+        # cropped_image = img[s_y:e_y, s_x:e_x]
+        w = max(30, w)
+        cropped_image = img[y : y + h, x - 30 : x + w + 30]
+        cropped_image = 255 - cropped_image
+        cv2.imwrite("./img/cropped_image.png", cropped_image)
+        return "./img/cropped_image.png"
+    return path
