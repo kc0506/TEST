@@ -10,11 +10,13 @@ from digit_recognization import *
 DIGIT_IMG = "./img/digit.png"
 
 # List to store positions
-positions = []
+positions = [[]]
 
 # BOOLEAN
 FLIP_HORIZONTAL = True 		# Flag to control horizontal flip
 
+# CAMERA
+CAMERA_ID = 1
 
 # THRESHOLD
 AREA_THRES  = 100
@@ -24,7 +26,7 @@ B_THRES		= 130
 
 # DIGIT RECOGNIZATION
 DIGIT_FINISH = False		# Flag to determine a digit has finished written
-VANISH_COOLDOWN = 8         # If no contour has been detected within cooldown, input is finished
+VANISH_COOLDOWN = 20         # If no contour has been detected within cooldown, input is finished
 digit = None				# Recognization Result
 CLF_MODEL = None 			# Trained Model
 
@@ -37,7 +39,7 @@ CLF_MODEL = None 			# Trained Model
 
 if __name__ == "__main__":
 
-	cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture(CAMERA_ID)
 	createSlider(R_THRES, G_THRES, B_THRES)
 	CLF_MODEL = train_model()					# Get Model
 
@@ -84,6 +86,8 @@ if __name__ == "__main__":
 
 		if len(valid_contours) == 0:		# No input
 			cooldown -= 1
+			if len(positions[-1]) > 0:
+				positions.append([])
 		else:
 			cooldown = VANISH_COOLDOWN
 			for cnt in valid_contours:
@@ -97,11 +101,12 @@ if __name__ == "__main__":
 				cv2.putText(display, f"({center[0]}, {center[1]})", (center[0]+radius, center[1]+radius), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
 				# Add the object's position to the history list
-				positions.append(center)
+				positions[-1].append(center)
 
 		# Draw the object's trajectory
-		for i in range(1, len(positions)):
-			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 40)
+		for line_pos in positions:
+			for i in range(1, len(line_pos)):
+				cv2.line(display, line_pos[i - 1], line_pos[i], (255, 255, 255), 40)
 
 		# Show Recognization Result
 		put_digit(display, digit)
@@ -111,11 +116,11 @@ if __name__ == "__main__":
 		cv2.imshow("display", display)
 		# Input is ready
 		if cooldown <= 0:
-			if len(positions) != 0:
+			if len(positions) > 1:
 				#DIGIT_FINISH = True						# Set Flag
 				path_cropped = screenshot(display, DIGIT_IMG, 1)			# Screenshot
 				digit = recognize_img_to_digit(path_cropped, CLF_MODEL)	# Get Result
-				positions = []								# Clear the position
+				positions = [[]]								# Clear the position
 			cooldown = VANISH_COOLDOWN					# Reset CoolDown
 		#
 		#* Press h to toggle horizontal flip
@@ -125,7 +130,7 @@ if __name__ == "__main__":
 		if key == ord('h'):
 			FLIP_HORIZONTAL = not FLIP_HORIZONTAL
 		elif key == ord('c'):
-			positions = []
+			positions = [[]]
 		elif key == ord('q'):
 			break
 
