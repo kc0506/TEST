@@ -1,9 +1,7 @@
-from calendar import c
 import signal
 import sys
 import cv2
 from cv2.typing import MatLike
-import numpy as np
 from pyscreeze import center
 from gesture import GestureHandler, Processor, TrajectoryHandler
 
@@ -14,7 +12,7 @@ from helper import *
 
 #######################  Constant  #######################
 
-CAMERA = 0
+CAMERA = 1
 
 # FILEPATH
 digit_img = "./img/digit.png"
@@ -28,7 +26,7 @@ FLIP_HORIZONTAL = True  # Flag to control horizontal flip
 
 # THRESHOLD
 AREA_THRES = 100
-R_THRES = 180
+R_THRES = 170
 G_THRES = 0
 B_THRES = 130
 
@@ -75,25 +73,25 @@ def draw_enclosing_circle(img: MatLike, contour: MatLike):
 if __name__ == "__main__":
     processor = Processor(get_cur_contours)
     processor.register_handler(GestureHandler())
-    processor.register_handler(TrajectoryHandler((0, 0)))
     processor.main_loop()
 
     cap = cv2.VideoCapture(CAMERA)
     createSlider(R_THRES, G_THRES, B_THRES)
 
+    trajectory_handler = None
     while True:
         # Get one frame from the camera
         ret, frame = cap.read()
+        if trajectory_handler is None:
+            trajectory_handler = TrajectoryHandler(frame.shape, lambda: processor.running)
+            processor.register_handler(trajectory_handler)
 
         # Check if horizontal flip is enabled
         if FLIP_HORIZONTAL:
             frame = cv2.flip(frame, 1)
 
-        try:
-            # Split RGB channels
-            b, g, r = cv2.split(frame)
-        except:
-            continue
+        # Split RGB channels
+        b, g, r = cv2.split(frame)
 
         # Perform thresholding to each channel
         r_thres = cv2.getTrackbarPos("R", "Threshold Sliders")
@@ -129,8 +127,9 @@ if __name__ == "__main__":
         # 	cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 5)
 
         # Show the frame
-        cv2.imshow("frame", frame)
+        # cv2.imshow("frame", frame)
         cv2.imshow("display", display)
+        cv2.imshow("trajectory", trajectory_handler.frame)
 
         # Press h to toggle horizontal flip
         # Press c to clear

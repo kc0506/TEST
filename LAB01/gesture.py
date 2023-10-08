@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
-from ast import Call
 import datetime
 from math import inf
-from pickletools import read_unicodestring1
 import threading
 from time import sleep
-from typing import Callable, List, Protocol, Sequence
+from typing import Callable, Protocol, Sequence
 import typing
 import cv2
 
 from cv2.typing import MatLike
-from discord import NotFound
 import numpy as np
 
 from helper import Colors, printc
@@ -19,22 +16,22 @@ from helper import Colors, printc
 # * Time constants (sec)
 FRAME = 1 / 120
 
-MIN_TOUCH_PERIOD = 0.1
-MIN_NOTOUCH_PERIOD = 0.1
+MIN_TOUCH_PERIOD = 0.05
+MIN_NOTOUCH_PERIOD = 0.05
 
-MAX_TAP_PERIOD = 0.4
-MAX_DOUBLE_TAP_DELAY = 0.4
+MAX_TAP_PERIOD = 0.5
+MAX_DOUBLE_TAP_DELAY = 0.5
 
 # * Image constants
-MIN_RADIUS = 10
-MIN_SHIFT = 20
+MIN_RADIUS = 40
+MIN_SHIFT = 40
 
 
 class Direction:
     dir: str
 
     def __init__(self, x, y) -> None:
-        self.dir = ((("none", "none"), ("none", "none")), (("left", "right"), ("down", "up")))[
+        self.dir = ((("none", "none"), ("none", "none")), (("left", "right"), ("up", "down")))[
             max(abs(x), abs(y)) >= MIN_SHIFT
         ][abs(x) < abs(y)][(abs(x) > abs(y) and x > 0) or (abs(y) > abs(x) and y > 0)]
 
@@ -79,7 +76,7 @@ class Processor:
                     continue
 
                 contours = tuple(
-                    filter(lambda cnt: cv2.minEnclosingCircle(cnt)[1] < MIN_RADIUS, contours)
+                    filter(lambda cnt: cv2.minEnclosingCircle(cnt)[1] >= MIN_RADIUS, contours)
                 )
 
                 for hanlder in self.handlers:
@@ -115,6 +112,7 @@ class UnitouchHandler(ABC):
         raise NotImplementedError
 
     def handle(self, contours: Sequence[MatLike], tick: float):
+        # print(len( contours ))
         if contours:
             cnt = sorted(contours, key=lambda cnt: cv2.minEnclosingCircle(cnt)[1])[-1]
 
@@ -143,36 +141,39 @@ class UnitouchHandler(ABC):
 class Logger:
     colors = [Colors.BLUE, Colors.RED, Colors.GREEN, Colors.CYAN, Colors.YELLOW]
 
-    state: str | List[str] = "default"
+    state: str | tuple[str, ...] = "default"
 
-    def log(self, payload: str | list[str]):
+    def log(self, payload: str | tuple[str, ...]):
         if payload == self.state:
             return
+        log = ""
 
         if type(payload) == str:
             color = self.colors[hash(payload) % len(self.colors)]
-            log = "[+] " + payload
+            if type(self.state) != tuple or self.state[0] != payload:
+                log = "[+] " + payload
+                self.state = payload
         else:
             color = self.colors[hash(payload[0]) % len(self.colors)]
-            log = ""
-            if (type(self.state) != list and self.state != payload[0]) and payload[0] != self.state[
+            if (type(self.state) != tuple and self.state != payload[0]) and payload[
                 0
-            ]:
+            ] != self.state[0]:
                 log = f"[+] {payload[0]}"
 
             s = " ".join(payload[1:])
             if s:
                 log += ("\n" if log else "") + "    " + s
 
+            self.state = payload
+
         if log:
             printc(color, log)
-        self.state = payload
 
 
 logger = Logger()
 
-# logger.log("move")
 # logger.log(["move", "right"])
+# logger.log("move")
 # logger.log(["move", ""])
 # logger.log('rotate')
 # logger.log(["move", "left"])
@@ -196,6 +197,19 @@ class GestureHandler(UnitouchHandler):
 
     drag_offset: tuple[float, float] | None = None
 
+    logging: bool = True
+
+    def log(self, payload: str | tuple[str, ...]):
+        if self.logging:
+            logger.log(payload)
+
+    def on_double_tap(self):
+        self.logging = not self.logging
+        if self.logging:
+            print("logging on")
+        else:
+            print("logging off")
+
     def touch(self, x: float, y: float, tick: float):
         if self.cur_touch_st == -1:
             self.cur_touch_st = tick
@@ -204,18 +218,22 @@ class GestureHandler(UnitouchHandler):
         delta = tick - self.cur_touch_st
         delay = self.cur_touch_st - self.last_touch_end if self.last_touch_end != -1 else inf
         if delta > MAX_TAP_PERIOD:
-            if delay > MAX_DOUBLE_TAP_DELAY:
+            if delay <= MAX_DOUBLE_TAP_DELAY:
                 tap_type = "double long tap"
+
             else:
                 tap_type = "long tap"
-            logger.log(tap_type)
+            self.log(tap_type)
 
             if self.drag_offset is None:
                 self.drag_offset = (x, y)
                 return
             x0, y0 = self.drag_offset
             direction = Direction(x - x0, y - y0)
-            logger.log([tap_type, str(direction)])
+            if direction.dir != "":
+                self.log((tap_type, str(direction)))
+                self.drag_offset = x, y
+
         else:
             pass
 
@@ -225,12 +243,13 @@ class GestureHandler(UnitouchHandler):
 
         delta = tick - self.cur_touch_st
         delay = self.cur_touch_st - self.last_touch_end if self.last_touch_end != -1 else inf
-        if delta > MAX_TAP_PERIOD:
-            if delay > MAX_DOUBLE_TAP_DELAY:
+        if delta <= MAX_TAP_PERIOD:
+            if delay <= MAX_DOUBLE_TAP_DELAY:
                 tap_type = "double tap"
+                self.on_double_tap()
             else:
                 tap_type = "tap"
-            logger.log(tap_type)
+            self.log(tap_type)
 
         self.drag_offset = None
         self.cur_touch_st = -1
@@ -241,11 +260,22 @@ class GUIHandler(UnitouchHandler):
     ...
 
 
+TRAJECTORY_WIDTH = 20
+TRAJECTORY_DELAY = 2
+
+
 class TrajectoryHandler(UnitouchHandler):
     frame: MatLike
+    offset: tuple[int, int] | None = None
+    last_touch_end: float | None = None
+    shape: tuple[int, ...]
 
-    def __init__(self, shape: tuple[int, int]) -> None:
+    def __init__(self, shape: tuple[int, ...], callback: Callable[[], bool]) -> None:
+        self.shape = shape
         self.frame = np.zeros(shape)
+
+    def get_frame(self):
+        return self.frame
 
     def touch(
         self,
@@ -253,11 +283,27 @@ class TrajectoryHandler(UnitouchHandler):
         y: float,
         tick: float,
     ):
-        # return super().touch(x, y, tick)
-        return
+        x = int(x)
+        y = int(y)
+        if self.offset is None:
+            self.offset = x, y
+            return
+
+        cv2.line(self.frame, self.offset, (x, y), (255, 255, 255), TRAJECTORY_WIDTH)
+        self.offset = x, y
+        self.last_touch_end = None
 
     def notouch(self, tick: float):
-        return
+        self.offset = None
+
+        if self.last_touch_end:
+            if tick - self.last_touch_end >= TRAJECTORY_DELAY:
+                self.frame[:] = 0
+                self.last_touch_end = None
+            else:
+                pass
+        else:
+            self.last_touch_end = tick
 
 
 # Processor(lambda: None).register_handler(TrajectoryHandler())
