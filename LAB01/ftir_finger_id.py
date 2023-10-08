@@ -6,6 +6,9 @@ from digit_recognization import *
 
 
 #######################  Constant  #######################
+
+CAMERA = 0
+
 # FILEPATH
 DIGIT_IMG = "./img/digit.png"
 
@@ -22,13 +25,13 @@ R_THRES 	= 200
 G_THRES		= 0
 B_THRES		= 130
 
-# DIGIT RECOGNIZATION
-DIGIT_FINISH = False		# Flag to determine a digit has finished written
+# FINGER RECOGNIZATION
 VANISH_COOLDOWN = 8         # If no contour has been detected within cooldown, input is finished
-digit = None				# Recognization Result
-CLF_MODEL = None 			# Trained Model
+COLOR = [(255,0,0), (0,255,0), (0,0,255)]
+fingers = {}
 
 #######################  Function  #######################
+
 
 
 
@@ -37,7 +40,7 @@ CLF_MODEL = None 			# Trained Model
 
 if __name__ == "__main__":
 
-	cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture(CAMERA)
 	createSlider(R_THRES, G_THRES, B_THRES)
 	CLF_MODEL = train_model()					# Get Model
 
@@ -86,38 +89,34 @@ if __name__ == "__main__":
 			cooldown -= 1
 		else:
 			cooldown = VANISH_COOLDOWN
-			for cnt in valid_contours:
+			for idx, cnt in enumerate(valid_contours):
 				# Calculate the area of the contour
 				# Find the centroid
 				(x,y), radius = cv2.minEnclosingCircle(cnt)
 				center = (int(x), int(y))
 				radius = int(radius)
-				cv2.circle(display, center, radius, (0, 255, 0), 2)
-				cv2.circle(display, center, 2, (0, 255, 0), -1)
-				cv2.putText(display, f"({center[0]}, {center[1]})", (center[0]+radius, center[1]+radius), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+				cv2.circle(display, center, radius, COLOR[idx], 2)
+				cv2.circle(display, center, 2, COLOR[idx], -1)
+				cv2.putText(display, f"({center[0]}, {center[1]})", (center[0]+radius, center[1]+radius), cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[idx], 1)
 
 				# Add the object's position to the history list
 				positions.append(center)
 
 		# Draw the object's trajectory
-		for i in range(1, len(positions)):
-			cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 40)
-
-		# Show Recognization Result
-		put_digit(display, digit)
+		# for i in range(1, len(positions)):
+		# 	cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 40)
 
 		# Show the frame
 		cv2.imshow('frame', frame)
 		cv2.imshow("display", display)
+		
 		# Input is ready
 		if cooldown <= 0:
 			if len(positions) != 0:
 				#DIGIT_FINISH = True						# Set Flag
-				path_cropped = screenshot(display, DIGIT_IMG, 1)			# Screenshot
-				digit = recognize_img_to_digit(path_cropped, CLF_MODEL)	# Get Result
 				positions = []								# Clear the position
 			cooldown = VANISH_COOLDOWN					# Reset CoolDown
-		#
+
 		#* Press h to toggle horizontal flip
 		#* Press c to clear
 		#* Press q to quit

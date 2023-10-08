@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 # Import datasets, classifiers and performance metrics
 from sklearn import datasets, metrics, svm
 from sklearn.model_selection import train_test_split
-import pytesseract
+
 import cv2
 
 def train_model():
@@ -24,11 +24,11 @@ def train_model():
 
     digits = datasets.load_digits()
 
-    _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
-    for ax, image, label in zip(axes, digits.images, digits.target):
-        ax.set_axis_off()
-        ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
-        ax.set_title("Training: %i" % label)
+    # _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
+    # for ax, image, label in zip(axes, digits.images, digits.target):
+    #     ax.set_axis_off()
+    #     ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
+    #     ax.set_title("Training: %i" % label)
 
     ###############################################################################
     # Classification
