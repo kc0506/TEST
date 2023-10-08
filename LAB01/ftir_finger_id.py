@@ -26,9 +26,17 @@ G_THRES		= 0
 B_THRES		= 130
 
 # FINGER RECOGNIZATION
-VANISH_COOLDOWN = 8         # If no contour has been detected within cooldown, input is finished
-COLOR = [(255,0,0), (0,255,0), (0,0,255)]
-fingers = {}
+VANISH_COOLDOWN = 20         	# If no contour has been detected within cooldown, input is finished
+IS_DRAWING      = False      	# Determine the trail is availale or not 
+COLOR = [(255,0,0), (0,255,0)]
+finger_pos = [
+	(-1, -1),			# Finger 1 pos
+	(-1, -1),			# Finger 2 pos
+]
+trails = {				# Store 2 fingers' tracks respectively
+	0: [],
+	1: []
+}
 
 #######################  Function  #######################
 
@@ -57,7 +65,11 @@ if __name__ == "__main__":
 			frame = cv2.flip(frame, 1)
 
 		# Split RGB channels
-		b, g, r = cv2.split(frame)
+		try:
+			# Split RGB channels
+			b, g, r = cv2.split(frame)
+		except:
+			continue
 
 		# Perform thresholding to each channel
 		r_thres = cv2.getTrackbarPos('R', 'Threshold Sliders')
@@ -89,22 +101,59 @@ if __name__ == "__main__":
 			cooldown -= 1
 		else:
 			cooldown = VANISH_COOLDOWN
-			for idx, cnt in enumerate(valid_contours):
+			for cnt in valid_contours:
 				# Calculate the area of the contour
 				# Find the centroid
 				(x,y), radius = cv2.minEnclosingCircle(cnt)
 				center = (int(x), int(y))
 				radius = int(radius)
-				cv2.circle(display, center, radius, COLOR[idx], 2)
-				cv2.circle(display, center, 2, COLOR[idx], -1)
-				cv2.putText(display, f"({center[0]}, {center[1]})", (center[0]+radius, center[1]+radius), cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[idx], 1)
+
+				# Determine which finger id is this contour depend on the distance to to prev location
+				print(f"finger 0: {finger_pos[0]}")
+				print(f"finger 1: {finger_pos[1]}")
+				if IS_DRAWING == False:
+					if finger_pos[0][0] != -1 and finger_pos[1][0] != -1:
+						print(f"2 finger ready !")
+						IS_DRAWING = True
+						continue
+					elif finger_pos[0][0] == -1:
+						id = 0
+						finger_pos[0] = center
+						trails[0].append(center)
+					else:
+						dist = get_euclidean_distance(center, finger_pos[0])   		# Heuristic : locate only if 2nd finger is far enough
+						print(f"2nd finger dist: {dist}")
+						if dist >= 200:
+							id = 1
+							finger_pos[1] = center
+							trails[1].append(center)
+				else:
+					id = -1
+					min_dist = 99999999
+					for idx, pos in enumerate(finger_pos):
+						dist = get_euclidean_distance(center, pos)
+						if dist < min_dist:
+							min_dist = dist
+							id = idx
+
+ 
+				cv2.circle(display, center, radius, COLOR[id], 2)
+				cv2.circle(display, center, 2, COLOR[id], -1)
+				cv2.putText(display, f"Finger {id}", (center[0]+radius, center[1]+radius), cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLOR[id], 2)
 
 				# Add the object's position to the history list
-				positions.append(center)
+				if(IS_DRAWING):
+					trails[id].append(center)
+				# Update prev finger position
+				finger_pos[id] = center
+
 
 		# Draw the object's trajectory
-		# for i in range(1, len(positions)):
-		# 	cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 40)
+		if IS_DRAWING:
+			for i in range(2):
+				trail = trails[i]
+				for j in range(1, len(trail)):
+					cv2.line(display, trail[j - 1], trail[j], COLOR[i], 20)
 
 		# Show the frame
 		cv2.imshow('frame', frame)
@@ -112,9 +161,12 @@ if __name__ == "__main__":
 		
 		# Input is ready
 		if cooldown <= 0:
-			if len(positions) != 0:
-				#DIGIT_FINISH = True						# Set Flag
-				positions = []								# Clear the position
+			if len(trails[0]) != 0 or len(trails[1]) != 0:
+				IS_DRAWING = False						# Set Flag
+				trails[0] = []							# Clear the trail
+				trails[1] = []							
+				finger_pos[0] = (-1, -1)                # Clear the position
+				finger_pos[1] = (-1, -1)
 			cooldown = VANISH_COOLDOWN					# Reset CoolDown
 
 		#* Press h to toggle horizontal flip
@@ -124,7 +176,11 @@ if __name__ == "__main__":
 		if key == ord('h'):
 			FLIP_HORIZONTAL = not FLIP_HORIZONTAL
 		elif key == ord('c'):
-			positions = []
+			IS_DRAWING = False
+			trails[0] = []							# Clear the position
+			trails[1] = []							# Clear the position
+			finger_pos[0] = (-1, -1)                # Clear the position
+			finger_pos[1] = (-1, -1)
 		elif key == ord('q'):
 			break
 
