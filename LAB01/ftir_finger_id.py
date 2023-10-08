@@ -26,7 +26,7 @@ G_THRES		= 0
 B_THRES		= 130
 
 # FINGER RECOGNIZATION
-VANISH_COOLDOWN = 20         	# If no contour has been detected within cooldown, input is finished
+VANISH_COOLDOWN = 12         	# If no contour has been detected within cooldown, input is finished
 IS_DRAWING      = False      	# Determine the trail is availale or not 
 COLOR = [(255,0,0), (0,255,0)]
 finger_pos = [

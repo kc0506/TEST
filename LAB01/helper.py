@@ -80,7 +80,7 @@ def put_digit(display, digit: int):
             2,
         )
 
-def get_euclidean_distance(pos1: tuple, pos2: tuple):
+def get_euclidean_distance(pos1: tuple, pos2: tuple) -> int|float:
     return (abs(pos1[0]-pos2[0])**2 + abs(pos1[1]-pos2[1])**2)**0.5
 
 
