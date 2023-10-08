@@ -3,6 +3,7 @@ import sys
 import cv2
 from cv2.typing import MatLike
 from pyscreeze import center
+from digit_recognization import recognize_img_to_digit, train_model
 from gesture import GestureHandler, Processor, TrajectoryHandler
 
 from helper import *
@@ -26,7 +27,7 @@ FLIP_HORIZONTAL = True  # Flag to control horizontal flip
 
 # THRESHOLD
 AREA_THRES = 100
-R_THRES = 170
+R_THRES = 160
 G_THRES = 0
 B_THRES = 130
 
@@ -70,7 +71,10 @@ def draw_enclosing_circle(img: MatLike, contour: MatLike):
 
 #######################  Main      #######################
 
+
 if __name__ == "__main__":
+    CLF_MODEL = train_model()  # Get Model
+
     processor = Processor(get_cur_contours)
     processor.register_handler(GestureHandler())
     processor.main_loop()
@@ -78,10 +82,24 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(CAMERA)
     createSlider(R_THRES, G_THRES, B_THRES)
 
+    cur_digit = None
     trajectory_handler = None
+    DIGIT_IMG = "./img/digit.png"
+
+    def get_digit():
+        if trajectory_handler:
+            path_cropped = screenshot(trajectory_handler.frame, DIGIT_IMG, 1)  # Screenshot
+            if path_cropped:
+                global cur_digit
+                cur_digit = recognize_img_to_digit(path_cropped, CLF_MODEL, False)  # Get Result
+                # put_digit(display, digit)
+
+    set_interval(get_digit, 0.5, lambda: processor.running)
+
     while True:
         # Get one frame from the camera
         ret, frame = cap.read()
+
         if trajectory_handler is None:
             trajectory_handler = TrajectoryHandler(frame.shape, lambda: processor.running)
             processor.register_handler(trajectory_handler)
@@ -91,7 +109,10 @@ if __name__ == "__main__":
             frame = cv2.flip(frame, 1)
 
         # Split RGB channels
-        b, g, r = cv2.split(frame)
+        try:
+            b, g, r = cv2.split(frame)
+        except:
+            continue
 
         # Perform thresholding to each channel
         r_thres = cv2.getTrackbarPos("R", "Threshold Sliders")
@@ -126,8 +147,11 @@ if __name__ == "__main__":
         # for i in range(1, len(positions)):
         # 	cv2.line(display, positions[i - 1], positions[i], (255, 255, 255), 5)
 
+        # print("cur_digit", cur_digit)
+        put_digit(display, cur_digit)
+
         # Show the frame
-        # cv2.imshow("frame", frame)
+        cv2.imshow("frame", frame)
         cv2.imshow("display", display)
         cv2.imshow("trajectory", trajectory_handler.frame)
 
