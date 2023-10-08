@@ -4,7 +4,8 @@ import cv2
 from cv2.typing import MatLike
 from pyscreeze import center
 from digit_recognization import recognize_img_to_digit, train_model
-from gesture import GestureHandler, Processor, TrajectoryHandler
+from gesture import GestureHandler, Processor
+from trajectory import TrajectoryHandler
 
 from helper import *
 

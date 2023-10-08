@@ -4,7 +4,9 @@ import cv2
 from cv2.typing import MatLike
 from pyscreeze import center
 from digit_recognization import recognize_img_to_digit, train_model
-from gesture import GestureHandler, Processor, TrajectoryHandler
+from gesture import GestureHandler, Processor
+from multitouch import MultiGesture, MultiTrajectory
+from trajectory import TrajectoryHandler
 
 from helper import *
 
@@ -46,9 +48,6 @@ def signal_handler(signum, frame):
         sys.exit(1)
 
 
-signal.signal(signal.SIGINT, signal_handler)
-
-
 def filter_frame(frame: MatLike):
     b, g, r = cv2.split(frame)
 
@@ -67,16 +66,22 @@ def filter_frame(frame: MatLike):
 if __name__ == "__main__":
     CLF_MODEL = train_model()  # Get Model
 
+    signal.signal(signal.SIGINT, signal_handler)
+
     processor = Processor(get_cur_contours)
-    processor.register_handler(GestureHandler())
+    # processor.register_handler(GestureHandler())
+    processor.register_handler(MultiGesture())
     processor.main_loop()
 
     cap = cv2.VideoCapture(CAMERA)
     createSlider(R_THRES, G_THRES, B_THRES)
 
+    # * Digit
     cur_digit = None
     trajectory_handler = None
     DIGIT_IMG = "./img/digit.png"
+
+    multi_trajectory = None
 
     def get_digit():
         if trajectory_handler:
@@ -92,9 +97,12 @@ if __name__ == "__main__":
         if FLIP_HORIZONTAL:
             frame = cv2.flip(frame, 1)
 
-        if trajectory_handler is None:
+        if trajectory_handler is None or multi_trajectory is None:
             trajectory_handler = TrajectoryHandler(frame.shape, lambda: processor.running)
             processor.register_handler(trajectory_handler)
+
+            multi_trajectory = MultiTrajectory(frame.shape)
+            processor.register_handler(multi_trajectory)
 
         result = filter_frame(frame)
 
@@ -104,12 +112,15 @@ if __name__ == "__main__":
 
         display = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(display, contours, -1, (0, 0, 255))
+
+        # Task 1.
         put_digit(display, cur_digit)
 
         # Show the frame
         cv2.imshow("frame", frame)
         cv2.imshow("display", display)
         cv2.imshow("trajectory", trajectory_handler.frame)
+        cv2.imshow("multi", multi_trajectory.frame)
 
         # Press h to toggle horizontal flip
         # Press q to quit

@@ -65,7 +65,7 @@ def printc(color: Colors, s: str):
 
 #######################  Utility  #######################
 def put_digit(display, digit: int | None):
-    if digit == None:
+    if digit == None or digit == -1:
         cv2.putText(
             display, f"Current Digit: None", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2
         )
