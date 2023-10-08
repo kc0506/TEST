@@ -84,30 +84,31 @@ def put_digit(display, digit: int):
 # frame: your frame
 # path : your save location path
 # mode : 0-> No crop, 1-> Crop
-# return the cropped screenshot
-def screenshot(frame, path: str, mode: int):
-    crop_frame = frame[50:480, 0:640]
-    cv2.imwrite(path, crop_frame)  # Screenshot current display
-    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    if mode == 1:  # Crop
-        ret, thresh = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
-        # Find contours in the binary mask
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # Iterate through the contours and find the largest one (assuming the white line is the largest contour)
-        largest_contour = max(contours, key=cv2.contourArea)
+# return the path of the screenshot
+def screenshot(frame, path:str, mode:int):
+	crop_frame = frame[50:480, 0:640]
+	cv2.imwrite(path, crop_frame)					# Screenshot current display
+	img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+	if(mode == 1): # Crop
+		ret, thresh = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
+		# Find contours in the binary mask
+		contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		# Iterate through the contours and find the largest one (assuming the white line is the largest contour)
+		largest_contour = max(contours, key=cv2.contourArea)
 
-        # Get the bounding box of the largest contour
-        x, y, w, h = cv2.boundingRect(largest_contour)
-        center_x = (x + x + w) / 2
-        center_y = (y + y + h) / 2
-        r = max(w / 2, h / 2) + 30
-        s_x = int(max(0, center_x - r))
-        e_x = int(min(480, center_x + r))
-        s_y = int(max(50, center_y - r))
-        e_y = int(min(640, center_y + r))
-        # cropped_image = img[s_y:e_y, s_x:e_x]
-        w = max(30, w)
-        cropped_image = img[y : y + h, x - 30 : x + w + 30]
-        cropped_image = 255 - cropped_image
-        cv2.imwrite("./img/cropped_image.png", cropped_image)
-    return "./img/cropped_image.png"
+		# Get the bounding box of the largest contour
+		x, y, w, h = cv2.boundingRect(largest_contour)
+		center_x = (x + x + w) / 2
+		center_y = (y + y + h) / 2
+		r = max(w/2, h/2) + 30
+		s_x = int(max(0, center_x - r))
+		e_x = int(min(480, center_x + r))
+		s_y = int(max(50, center_y - r))
+		e_y = int(min(640, center_y + r))
+		#cropped_image = img[s_y:e_y, s_x:e_x]
+		w = max(30, w)
+		cropped_image = img[y:y+h, x-30:x+w+30]
+		cropped_image = 255 - cropped_image
+		cv2.imwrite('./img/cropped_image.png', cropped_image)
+		return './img/cropped_image.png'
+	return path
