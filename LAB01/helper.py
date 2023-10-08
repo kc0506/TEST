@@ -81,8 +81,6 @@ def put_digit(display, digit: int | None):
         )
 
 
-def get_euclidean_distance(pos1: tuple, pos2: tuple):
-    return (abs(pos1[0] - pos2[0]) ** 2 + abs(pos1[1] - pos2[1]) ** 2) ** 0.5
 
 
 def draw_enclosing_circle(img: MatLike, contour: MatLike):
@@ -101,6 +99,9 @@ def draw_enclosing_circle(img: MatLike, contour: MatLike):
         1,
     )
     return img, center
+
+def get_euclidean_distance(pos1: tuple, pos2: tuple) -> int|float:
+    return (abs(pos1[0]-pos2[0])**2 + abs(pos1[1]-pos2[1])**2)**0.5
 
 
 # frame: your frame
