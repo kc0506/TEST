@@ -2,6 +2,7 @@ from enum import Enum
 import threading
 from typing import Callable
 import cv2
+from cv2.typing import MatLike
 from matplotlib.cbook import print_cycles
 import numpy as np
 
@@ -79,8 +80,27 @@ def put_digit(display, digit: int | None):
             2,
         )
 
+
 def get_euclidean_distance(pos1: tuple, pos2: tuple):
-    return (abs(pos1[0]-pos2[0])**2 + abs(pos1[1]-pos2[1])**2)**0.5
+    return (abs(pos1[0] - pos2[0]) ** 2 + abs(pos1[1] - pos2[1]) ** 2) ** 0.5
+
+
+def draw_enclosing_circle(img: MatLike, contour: MatLike):
+    (x, y), radius = cv2.minEnclosingCircle(contour)
+    center = (int(x), int(y))
+    radius = int(radius)
+    cv2.circle(img, center, radius, (0, 255, 0), 2)
+    cv2.circle(img, center, 2, (0, 255, 0), -1)
+    cv2.putText(
+        img,
+        f"({center[0]}, {center[1]})",
+        (center[0] + radius, center[1] + radius),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 255, 0),
+        1,
+    )
+    return img, center
 
 
 # frame: your frame
