@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import datetime
+import dis
 from math import inf
+import math
 import threading
 from time import sleep
 from typing import Callable, Protocol, Sequence
@@ -9,6 +11,7 @@ import cv2
 
 from cv2.typing import MatLike
 import numpy as np
+from pyparsing import disable_diag
 
 from helper import Colors, printc
 
@@ -23,7 +26,7 @@ MAX_TAP_PERIOD = 0.5
 MAX_DOUBLE_TAP_DELAY = 0.5
 
 # * Image constants
-MIN_RADIUS = 40
+MIN_RADIUS = 20
 MIN_SHIFT = 40
 
 
@@ -262,6 +265,8 @@ class GUIHandler(UnitouchHandler):
 
 TRAJECTORY_WIDTH = 20
 TRAJECTORY_DELAY = 2
+MIN_DIST = 5
+MAX_DIST = 50
 
 
 class TrajectoryHandler(UnitouchHandler):
@@ -289,7 +294,13 @@ class TrajectoryHandler(UnitouchHandler):
             self.offset = x, y
             return
 
-        cv2.line(self.frame, self.offset, (x, y), (255, 255, 255), TRAJECTORY_WIDTH)
+        x0, y0 = self.offset
+        dist = (x-x0)**2 + (y-y0)**2
+        dist = math.isqrt(dist)
+        if dist > MAX_DIST or dist < MIN_DIST:
+            pass
+        else:
+            cv2.line(self.frame, self.offset, (x, y), (255, 255, 255), TRAJECTORY_WIDTH)
         self.offset = x, y
         self.last_touch_end = None
 

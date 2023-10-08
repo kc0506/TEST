@@ -65,7 +65,7 @@ def train_model():
     return clf
 
 
-def recognize_img_to_digit(path:str, clf:svm.SVC):
+def recognize_img_to_digit(path:str, clf:svm.SVC, logging=True):
     # Load an image
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     resized_img = 255-cv2.resize(img, (8, 8), interpolation=cv2.INTER_AREA)
@@ -77,8 +77,10 @@ def recognize_img_to_digit(path:str, clf:svm.SVC):
     # print(resized_img)
     cv2.imwrite('./img/resized_img.png', resized_img)
     data = resized_img.reshape((1, -1))
-    print("START RECOGNIZING...")
+    if logging:
+        print("START RECOGNIZING...")
     digit = clf.predict(data)
-    print(f"Result: {digit[0]}")
-    print("FINISH RECOGNIZING...")
+    if logging:
+        print(f"Result: {digit[0]}")
+        print("FINISH RECOGNIZING...")
     return digit[0]
