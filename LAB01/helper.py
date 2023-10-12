@@ -3,7 +3,6 @@ import threading
 from typing import Callable
 import cv2
 from cv2.typing import MatLike
-from matplotlib.cbook import print_cycles
 import numpy as np
 
 
