@@ -11,9 +11,10 @@ import cv2
 
 from cv2.typing import MatLike
 import numpy as np
-from pyparsing import disable_diag
 
 from helper import Colors, printc
+from logger import Logger
+from processor import Processor, UnitouchHandler
 
 
 # * Time constants (sec)
@@ -43,134 +44,6 @@ class Direction:
 
     def __repr__(self) -> str:
         return self.dir
-
-
-@typing.runtime_checkable
-class ContoursHandlerClass(Protocol):
-    def handle(self, contours: Sequence[MatLike], tick: float):
-        pass
-
-
-ContourHandler = Callable[[Sequence[MatLike], float], None]
-
-
-tick0 = datetime.datetime.now()
-
-
-class Processor:
-    get_cur_contours: Callable[[], Sequence[MatLike] | None]
-    running = True
-    handlers: list[ContoursHandlerClass | ContourHandler] = []
-
-    def __init__(self, get_cur_contours: Callable[[], Sequence[MatLike] | None]) -> None:
-        self.get_cur_contours = get_cur_contours
-
-    def kill_loop(self):
-        self.running = False
-
-    def main_loop(self):
-        def loop_target():
-            while self.running:
-                contours = self.get_cur_contours()
-                cur_time = datetime.datetime.now() - tick0
-                cur_time = cur_time.total_seconds()
-
-                if contours is None:
-                    continue
-
-                contours = tuple(
-                    filter(lambda cnt: cv2.minEnclosingCircle(cnt)[1] >= MIN_RADIUS, contours)
-                )
-
-                for hanlder in self.handlers:
-                    if isinstance(hanlder, ContoursHandlerClass):
-                        hanlder.handle(contours, cur_time)
-                    else:
-                        hanlder(contours, cur_time)
-
-                sleep(FRAME)
-
-        t = threading.Thread(target=loop_target)
-        t.start()
-
-    def register_handler(self, handler: ContoursHandlerClass | ContourHandler):
-        self.handlers.append(handler)
-
-
-class UnitouchHandler(ABC):
-    """
-    Abstract class that only handle contour with largest radius.
-    Handle single point touch event.
-    """
-
-    last_touch_st = -1
-    last_notouch_st = -1
-
-    @abstractmethod
-    def touch(self, x: float, y: float, tick: float):
-        raise NotImplementedError
-
-    @abstractmethod
-    def notouch(self, tick: float):
-        raise NotImplementedError
-
-    def handle(self, contours: Sequence[MatLike], tick: float):
-        # print(len( contours ))
-        if contours:
-            cnt = sorted(contours, key=lambda cnt: cv2.minEnclosingCircle(cnt)[1])[-1]
-
-            # touch
-            if self.last_touch_st != -1:
-                delta = tick - self.last_touch_st
-                if delta >= MIN_TOUCH_PERIOD:
-                    x, y = cv2.minEnclosingCircle(cnt)[0]
-                    self.touch(x, y, tick)
-            else:
-                self.last_touch_st = tick
-
-            # ? More tolerate for touch - cancel potential notouch on any touch
-            self.last_notouch_st = -1
-        else:
-            # no touch
-            if self.last_notouch_st != -1:
-                delta = tick - self.last_notouch_st
-                if delta >= MIN_NOTOUCH_PERIOD:
-                    self.last_touch_st = -1
-                    self.notouch(tick)
-            else:
-                self.last_notouch_st = tick
-
-
-class Logger:
-    colors = [Colors.BLUE, Colors.RED, Colors.GREEN, Colors.CYAN, Colors.YELLOW]
-
-    state: str | tuple[str, ...] = "default"
-
-    def log(self, payload: str | tuple[str, ...]):
-        if payload == self.state:
-            return
-        log = ""
-
-        if type(payload) == str:
-            color = self.colors[hash(payload) % len(self.colors)]
-            if type(self.state) != tuple or self.state[0] != payload:
-                log = "[+] " + payload
-                self.state = payload
-        else:
-            color = self.colors[hash(payload[0]) % len(self.colors)]
-            if (type(self.state) != tuple and self.state != payload[0]) and payload[
-                0
-            ] != self.state[0]:
-                log = f"[+] {payload[0]}"
-
-            s = " ".join(payload[1:])
-            if s:
-                log += ("\n" if log else "") + "    " + s
-
-            self.state = payload
-
-        if log:
-            printc(color, log)
 
 
 logger = Logger()
@@ -207,11 +80,12 @@ class GestureHandler(UnitouchHandler):
             logger.log(payload)
 
     def on_double_tap(self):
-        self.logging = not self.logging
-        if self.logging:
-            print("logging on")
-        else:
-            print("logging off")
+        # self.logging = not self.logging
+        # if self.logging:
+        #     print("logging on")
+        # else:
+        #     print("logging off")
+        pass
 
     def touch(self, x: float, y: float, tick: float):
         if self.cur_touch_st == -1:
@@ -261,61 +135,3 @@ class GestureHandler(UnitouchHandler):
 
 class GUIHandler(UnitouchHandler):
     ...
-
-
-TRAJECTORY_WIDTH = 20
-TRAJECTORY_DELAY = 2
-MIN_DIST = 5
-MAX_DIST = 50
-
-
-class TrajectoryHandler(UnitouchHandler):
-    frame: MatLike
-    offset: tuple[int, int] | None = None
-    last_touch_end: float | None = None
-    shape: tuple[int, ...]
-
-    def __init__(self, shape: tuple[int, ...], callback: Callable[[], bool]) -> None:
-        self.shape = shape
-        self.frame = np.zeros(shape)
-
-    def get_frame(self):
-        return self.frame
-
-    def touch(
-        self,
-        x: float,
-        y: float,
-        tick: float,
-    ):
-        x = int(x)
-        y = int(y)
-        if self.offset is None:
-            self.offset = x, y
-            return
-
-        x0, y0 = self.offset
-        dist = (x-x0)**2 + (y-y0)**2
-        dist = math.isqrt(dist)
-        if dist > MAX_DIST or dist < MIN_DIST:
-            pass
-        else:
-            cv2.line(self.frame, self.offset, (x, y), (255, 255, 255), TRAJECTORY_WIDTH)
-        self.offset = x, y
-        self.last_touch_end = None
-
-    def notouch(self, tick: float):
-        self.offset = None
-
-        if self.last_touch_end:
-            if tick - self.last_touch_end >= TRAJECTORY_DELAY:
-                self.frame[:] = 0
-                self.last_touch_end = None
-            else:
-                pass
-        else:
-            self.last_touch_end = tick
-
-
-# Processor(lambda: None).register_handler(TrajectoryHandler())
-# Processor(lambda: None).register_handler(GestureHandler())
