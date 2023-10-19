@@ -30,11 +30,7 @@ def updateCanvas():
     window.update()
 
 try:
-<<<<<<< HEAD
     file=r'/Users/wei/Desktop/coding/ntu/112-1_CSL/LAB02/Avicii-WithoutYou-Instrumental.mp3' # 播放音樂的路徑
-=======
-    file=r'D:\\zoets\Desktop\\NTU\\112-1\\計算機系統實驗\\112-1_CSL\\LAB02\\you-belong-with-me.mp3' # 播放音樂的路徑
->>>>>>> 1751a233d5d579f5054ce29b37e5ba42421c7a51
     pygame.mixer.init()
     track = pygame.mixer.music.load(file)
     pygame.mixer.music.play()
