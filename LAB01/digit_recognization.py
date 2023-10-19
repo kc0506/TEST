@@ -1,11 +1,13 @@
 # Standard scientific Python imports
+from fastapi.openapi.models import ParameterInType
 import matplotlib.pyplot as plt
 
 # Import datasets, classifiers and performance metrics
 from sklearn import datasets, metrics, svm
 from sklearn.model_selection import train_test_split
-import pytesseract
+
 import cv2
+
 
 def train_model():
     ###############################################################################
@@ -24,11 +26,11 @@ def train_model():
 
     digits = datasets.load_digits()
 
-    _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
-    for ax, image, label in zip(axes, digits.images, digits.target):
-        ax.set_axis_off()
-        ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
-        ax.set_title("Training: %i" % label)
+    # _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
+    # for ax, image, label in zip(axes, digits.images, digits.target):
+    #     ax.set_axis_off()
+    #     ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
+    #     ax.set_title("Training: %i" % label)
 
     ###############################################################################
     # Classification
@@ -65,20 +67,27 @@ def train_model():
     return clf
 
 
-def recognize_img_to_digit(path:str, clf:svm.SVC):
+def recognize_img_to_digit(path: str, clf: svm.SVC, logging=True):
     # Load an image
+    print(path)
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    resized_img = 255-cv2.resize(img, (8, 8), interpolation=cv2.INTER_AREA)
+    try:
+        tmp = cv2.resize(img, (8, 8), interpolation=cv2.INTER_AREA)
+    except:
+        return -1
+    resized_img = 255 - tmp
     for i in range(8):
         for j in range(8):
-            resized_img[i][j] =  int(resized_img[i][j]/16)
+            resized_img[i][j] = int(resized_img[i][j] / 16)
             if resized_img[i][j] <= 3:
                 resized_img[i][j] = 0
     # print(resized_img)
-    cv2.imwrite('./img/resized_img.png', resized_img)
+    cv2.imwrite("./img/resized_img.png", resized_img)
     data = resized_img.reshape((1, -1))
-    print("START RECOGNIZING...")
+    if logging:
+        print("START RECOGNIZING...")
     digit = clf.predict(data)
-    print(f"Result: {digit[0]}")
-    print("FINISH RECOGNIZING...")
+    if logging:
+        print(f"Result: {digit[0]}")
+        print("FINISH RECOGNIZING...")
     return digit[0]
