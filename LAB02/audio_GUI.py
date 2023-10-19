@@ -4,7 +4,7 @@ import sys
 import pygame
 import tkinter as tk
  
-COM_PORT = '/dev/cu.usbmodem142101'  # 請自行修改序列埠名稱
+COM_PORT = 'com3'  # 請自行修改序列埠名稱
 BAUD_RATES = 9600
 ser = serial.Serial(COM_PORT, BAUD_RATES)
 if ser.is_open is True:
@@ -30,7 +30,7 @@ def updateCanvas():
     window.update()
 
 try:
-    file=r'/Users/naonao/Desktop/Avicii-WithoutYou-Instrumental.mp3' # 播放音樂的路徑
+    file=r'D:\\zoets\Desktop\\NTU\\112-1\\計算機系統實驗\\112-1_CSL\\LAB02\\you-belong-with-me.mp3' # 播放音樂的路徑
     pygame.mixer.init()
     track = pygame.mixer.music.load(file)
     pygame.mixer.music.play()
