@@ -3,7 +3,7 @@ import time
 import sys
 import pygame
  
-COM_PORT = 'com3'  # 請自行修改序列埠名稱
+COM_PORT = '/dev/cu.usbmodem11201'  # 請自行修改序列埠名稱
 BAUD_RATES = 9600
 ser = serial.Serial(COM_PORT, BAUD_RATES)
 if ser.is_open is True:
@@ -14,7 +14,7 @@ fixed_volume = 1
 threshold = 0.5
 
 try:
-    file=r'D:\\zoets\Desktop\\NTU\\112-1\\計算機系統實驗\\112-1_CSL\\LAB02\\you-belong-with-me.mp3' # 播放音樂的路徑
+    file=r'/Users/lijiacian/2023 fall/計算機系統實驗/112-1_CSL/LAB02/you-belong-with-me.mp3' # 播放音樂的路徑
     pygame.mixer.init()
     track = pygame.mixer.music.load(file)
     pygame.mixer.music.play()
@@ -26,12 +26,14 @@ try:
             res = ser.read_until().decode()
             if res == "v\n":
                 v = int(ser.read_until().decode()) / 1024
-                if v > threshold:
+                if v > threshold and not music_state:
+                    music_state = 1
                     pygame.mixer.music.unpause()
-                    print("Turn on music\n")
-                else:
+                    print("Play\n")
+                elif v <= threshold and music_state:
+                    music_state = 0
                     pygame.mixer.music.pause()
-                    print("Turn off music\n")
+                    print("Pause\n")
  
 except KeyboardInterrupt:
     ser.close()
